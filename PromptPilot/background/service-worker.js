@@ -4,10 +4,11 @@ import { GeminiProvider }    from './providers/gemini.js';
 import { GroqProvider }      from './providers/groq.js';
 import { enhancePrompt }     from './enhancer.js';
 import { parseMemory, selectRelevantMemory } from './memory.js';
+import * as api from './api.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const FREE_DAILY_LIMIT = 5;
+const FREE_DAILY_LIMIT = 3;
 const STORAGE_KEYS = {
   PROVIDER:     'pp_provider',
   API_KEY:      'pp_api_key',
@@ -95,7 +96,7 @@ async function handleEnhanceRequest(rawPrompt) {
     if (usage.count >= FREE_DAILY_LIMIT) {
       return {
         success: false,
-        error: `You've used all ${FREE_DAILY_LIMIT} free enhancements today. Add your own API key to continue, or upgrade to Pro.`,
+        error: `You've used all ${FREE_DAILY_LIMIT} free enhancements today. Upgrade to BYOK or Pro for unlimited usage.`,
         limitReached: true,
       };
     }
@@ -110,20 +111,26 @@ async function handleEnhanceRequest(rawPrompt) {
     };
   }
 
-  // 4. Load relevant memory snippets (local scoring — no extra LLM call)
+  // 4. Load relevant memory snippets (Gated by Tier)
   let memorySnippets = [];
-  if (memoryOn && memoryRaw) {
+  const isMemoryTier = tier === 'byok_memory' || tier === 'pro_memory';
+  
+  if (memoryOn && memoryRaw && isMemoryTier) {
     const allEntries = parseMemory(memoryRaw);
-    // Domain will be detected inside enhancePrompt; pre-score with 'General'
-    // for the first pass — enhancer re-uses detected domain internally
     memorySnippets = selectRelevantMemory(allEntries, rawPrompt, 'General', 6);
+  } else if (memoryOn && memoryRaw && !isMemoryTier) {
+    console.warn('[PromptPilot] Memory enabled but tier does not support it.');
   }
 
   // 5. Enhance
   try {
     const provider = createProvider(providerName, apiKey, model);
     const result   = await enhancePrompt(rawPrompt, provider, null, memorySnippets);
-    await incrementUsage();
+    const newCount = await incrementUsage();
+    
+    // Sync to Supabase in background
+    api.syncUsage(newCount);
+    
     return { success: true, ...result };
   } catch (err) {
     return { success: false, error: err.message };

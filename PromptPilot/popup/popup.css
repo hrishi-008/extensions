@@ -69,6 +69,8 @@ html, body {
   margin-top: 1px;
 }
 
+.tier-badges { display: flex; align-items: center; gap: 8px; }
+
 .tier-badge {
   padding: 3px 9px;
   border-radius: 20px;
@@ -77,9 +79,10 @@ html, body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.tier-free { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-.tier-byok { background: rgba(124, 58, 237, 0.15); color: var(--purple-lt); border: 1px solid var(--border); }
-.tier-pro  { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.tier-free   { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); border: 1px solid rgba(255, 255, 255, 0.15); }
+.tier-byok   { background: rgba(124, 58, 237, 0.15); color: var(--purple-lt); border: 1px solid var(--border); }
+.tier-memory { background: rgba(217, 70, 239, 0.15); color: #f472b6; border: 1px solid rgba(217, 70, 239, 0.3); }
+.tier-pro    { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
 
 /* ─── Body ────────────────────────────────────────────────────────────── */
 
@@ -555,4 +558,59 @@ input:checked + .toggle-slider:before {
 
 .memory-textarea::placeholder {
   color: rgba(255, 255, 255, 0.15);
+}
+
+/* ─── Locked Overlay ────────────────────────────────────────────────── */
+
+.locked-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(13, 11, 26, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.lock-card {
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.lock-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--purple-lt);
+}
+
+.lock-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.lock-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 11.5px;
 }

@@ -18,9 +18,14 @@
     </div>
     <div class="header-text">
       <div class="header-title">PromptPilot</div>
-      <div class="header-sub">AI Prompt Enhancer</div>
+      <div class="header-sub" id="auth-status">Sign in to sync settings</div>
     </div>
-    <div class="tier-badge tier-byok" id="tier-badge">BYOK</div>
+    <div class="tier-badges">
+      <div class="tier-badge tier-free" id="tier-badge">FREE</div>
+      <button class="icon-btn" id="auth-btn" title="Sign in / Account">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ── Tabs ──────────────────────────────────────────────────────────── -->
@@ -42,10 +47,10 @@
 
       <!-- Usage Card -->
       <div class="card">
-        <div class="card-label">Today's Usage</div>
+        <div class="card-label">Daily Enhancements</div>
         <div class="usage-row">
-          <div class="usage-count" id="usage-count">0 <span>/ 5 enhancements</span></div>
-          <div class="usage-reset">Resets at midnight</div>
+          <div class="usage-count" id="usage-count">0 <span>/ 3 enhancements</span></div>
+          <div class="usage-reset" id="usage-status">Free Tier</div>
         </div>
         <div class="usage-bar-bg">
           <div class="usage-bar-fill" id="usage-bar" style="width:0%"></div>
@@ -120,11 +125,11 @@
       <div class="divider"></div>
 
       <!-- Upgrade CTA -->
-      <div class="upgrade-cta">
-        <h4>🚀 Going Pro?</h4>
-        <p>Pro tier coming soon — managed API, 200 enhancements/day, priority support.</p>
-        <button class="btn btn-ghost" id="notify-btn" style="width:100%;font-size:12px">
-          Notify me when Pro launches
+      <div class="upgrade-cta" id="upgrade-cta">
+        <h4>🚀 Unlock Full Power</h4>
+        <p>Get unlimited enhancements, managed AI (no keys), and powerful memory features.</p>
+        <button class="btn btn-ghost" id="upgrade-btn" style="width:100%;font-size:12px">
+          View Plans &amp; Upgrade
         </button>
       </div>
 
@@ -133,6 +138,16 @@
 
   <!-- ══════════════════════════ MEMORY TAB ════════════════════════════ -->
   <div class="tab-panel" id="tab-memory">
+    <!-- Locked Overlay -->
+    <div class="locked-overlay" id="memory-lock" style="display:none">
+      <div class="lock-card">
+        <div class="lock-icon"><Lock size={24} /></div>
+        <h3>Memory is Locked</h3>
+        <p>Memory sync requires <strong>BYOK Memory</strong> or <strong>Pro Memory</strong> tier.</p>
+        <button class="btn btn-primary btn-sm" id="unlock-memory-btn">Upgrade Now</button>
+      </div>
+    </div>
+
     <div class="body">
 
       <!-- Memory toggle + stats -->

@@ -45,7 +45,8 @@ const KEY_HINTS = {
   groq:      { prefix: 'gsk_',     docs: 'console.groq.com/keys' },
 };
 
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 3;
+const WEB_URL = 'http://localhost:3000'; // Update to Vercel URL later
 
 // ─── DOM Refs ─────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,9 @@ const els = {
   statusText:      $('status-text'),
   keyHint:         $('key-hint'),
   saveBtn:         $('save-btn'),
-  notifyBtn:       $('notify-btn'),
+  upgradeBtn:      $('upgrade-btn'),
+  authBtn:         $('auth-btn'),
+  authStatus:      $('auth-status'),
 
   // Tabs
   tabs:            document.querySelectorAll('.tab'),
@@ -77,6 +80,8 @@ const els = {
   memoryStatsText: $('memory-stats-text'),
   memoryToggle:    $('memory-toggle'),
   memoryTabBadge:  $('memory-tab-badge'),
+  memoryLock:      $('memory-lock'),
+  unlockMemoryBtn: $('unlock-memory-btn'),
   copyPromptBtn:   $('copy-prompt-btn'),
   exportPromptBox: $('export-prompt-box'),
   memoryTextarea:  $('memory-textarea'),
@@ -186,16 +191,33 @@ function setStatus(type, message) {
 }
 
 function updateUsageDisplay(count, tier) {
-  const isUnlimited = tier === 'byok' || tier === 'pro';
-  const displayLimit = isUnlimited ? '∞' : FREE_LIMIT;
+  const isPaid = tier !== 'free';
+  const isMemoryTier = tier === 'byok_memory' || tier === 'pro_memory';
+  
+  const displayLimit = isPaid ? '∞' : FREE_LIMIT;
   els.usageCount.innerHTML = `${count} <span>/ ${displayLimit} enhancements</span>`;
 
-  const pct = isUnlimited ? Math.min((count / 50) * 100, 100) : Math.min((count / FREE_LIMIT) * 100, 100);
+  // Progress Bar: for free, show 0-3; for paid, show relative activity
+  const pct = !isPaid ? Math.min((count / FREE_LIMIT) * 100, 100) : 100;
   els.usageBar.style.width = `${pct}%`;
+  if (isPaid) els.usageBar.style.background = 'linear-gradient(90deg, #d946ef, #8b5cf6)';
 
-  const badge = els.tierBadge;
-  badge.textContent = tier === 'byok' ? 'BYOK' : tier === 'pro' ? 'PRO' : 'FREE';
-  badge.className = `tier-badge tier-${tier}`;
+  // Badge Logic
+  const labels = { 
+    free: 'FREE', 
+    byok: 'BYOK', 
+    byok_memory: 'BYOK MEMORY', 
+    pro: 'PRO', 
+    pro_memory: 'PRO MEMORY' 
+  };
+  
+  els.tierBadge.textContent = labels[tier] || 'FREE';
+  els.tierBadge.className = `tier-badge tier-${tier.includes('memory') ? 'memory' : tier}`;
+
+  // Gating Logic
+  if (els.memoryLock) {
+    els.memoryLock.style.display = isMemoryTier ? 'none' : 'flex';
+  }
 }
 
 // ─── Memory Logic ────────────────────────────────────────────────────────────
@@ -273,10 +295,20 @@ function updateCharCount() {
 
 async function loadSettings() {
   try {
-    const [settings, usage] = await Promise.all([
+    const [settings, usage, storage] = await Promise.all([
       sendMsg({ type: 'GET_SETTINGS' }),
       sendMsg({ type: 'GET_USAGE' }),
+      chrome.storage.local.get(['pp_session'])
     ]);
+
+    // Handle Auth UI
+    if (storage.pp_session) {
+      els.authStatus.textContent = `Syncing as ${storage.pp_session.user.email}`;
+      els.authBtn.style.color = '#10b981';
+    } else {
+      els.authStatus.textContent = 'Sign in to sync settings';
+      els.authBtn.style.color = '';
+    }
 
     if (settings) {
       const provider = settings.provider || 'openai';
@@ -295,7 +327,7 @@ async function loadSettings() {
     }
 
     if (usage) {
-      updateUsageDisplay(usage.count || 0, usage.tier || 'byok');
+      updateUsageDisplay(usage.count || 0, usage.tier || 'free');
     }
   } catch (err) {
     console.error('[PromptPilot popup] loadSettings:', err);
@@ -390,14 +422,13 @@ function initEventListeners() {
       : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
   });
 
-  els.saveBtn.addEventListener('click', saveAndTest);
-  els.apiKeyInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveAndTest(); });
-  els.customModelInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveAndTest(); });
+  const openWeb = (path = '') => window.open(`${WEB_URL}${path}`, '_blank');
 
-  els.notifyBtn.addEventListener('click', () => {
-    els.notifyBtn.textContent = "✓ We'll let you know!";
-    els.notifyBtn.disabled = true;
-  });
+  els.authBtn.addEventListener('click', () => openWeb('/auth'));
+  els.upgradeBtn.addEventListener('click', () => openWeb('#pricing'));
+  els.unlockMemoryBtn.addEventListener('click', () => openWeb('#pricing'));
+
+  els.saveBtn.addEventListener('click', saveAndTest);
 
   // Memory listeners
   els.memoryToggle.addEventListener('change', () => {
